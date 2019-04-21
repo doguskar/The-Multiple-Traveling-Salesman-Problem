@@ -1,9 +1,10 @@
 package edu.anadolu;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.ParseException;
+
+import java.io.*;
+import java.util.*;
 
 public class mTSP {
     private int numDepots;
@@ -110,43 +111,60 @@ public class mTSP {
             }
             selectedDepot++;
         }
+
+        try{
+            writeJson();
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
     }
-    public void writeJson(){
-        System.out.println("{\n" +
-                "  \"solution\": [");
+    public void writeJson() throws IOException{
+        JSONObject solution = new JSONObject();
+        List<Map> solMap = new ArrayList<>();
+
         int selectedDepot = 0;
         for(List<List<Integer>> listOfDepots: routes){
             int depotCity = selectedDepots.get(selectedDepot);
-            System.out.println("   {");
-            System.out.println("    \"depot\": \"" + depotCity + "\",");
-            System.out.println("    \"routes\": [");
+            selectedDepot++;
 
+            Map<String,Object> solSub = new HashMap<>();
+            solSub.put("depot", (""+depotCity));
 
-            int selectedSalesman = 1;
+            List<String> routes = new ArrayList<>();
             for(int f = 0; f < listOfDepots.size(); f++){
                 List<Integer> listOfSalesmen = listOfDepots.get(f);
-                System.out.print("     \"");
 
+                /**/String routeString = "";
                 for(int i = 0; i < listOfSalesmen.size(); i++){
                     int cityNum = listOfSalesmen.get(i);
-                    System.out.print(cityNum);
+                    routeString += cityNum;
                     if(i != listOfSalesmen.size()-1)
-                        System.out.print(" ");
-
+                        routeString += " ";
                 }
-                selectedSalesman++;
-                System.out.print("\"");
-                if(f != listOfDepots.size()-1)
-                    System.out.print(",");
-                System.out.println();
+                routes.add(routeString);
             }
-            selectedDepot++;
-            System.out.println("    ]");
-            System.out.println("   },");
+            solSub.put("routes", routes);
+            solMap.add(solSub);
         }
 
-        System.out.println("  ]\n" +
-                "}");
+        solution.put("solution",solMap);
+
+        File jsonDir = new File(System.getProperty("user.dir")
+                + "\\solution_d" + numDepots + "s" + numSalesmen + ".json");
+
+        Writer output = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(jsonDir), "UTF8"));
+        output.write(solution.toJSONString());
+        output.close();
+        try{
+            writeImgSol(jsonDir);
+        }
+        catch (ParseException e){
+            e.printStackTrace();
+        }
+    }
+    private void writeImgSol(File jsonDir) throws ParseException, IOException{
+        CreateImgSol.create(jsonDir);
     }
 
     private int getRandomCity(){
