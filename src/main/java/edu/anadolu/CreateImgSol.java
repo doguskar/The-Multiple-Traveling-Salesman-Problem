@@ -206,7 +206,7 @@ public class CreateImgSol{
         }
 
         g2D.dispose();
-        File solImdDir = new File(rootDir.getAbsolutePath() + "\\" + jsonDir.getName() + ".jpg");
+        File solImdDir = new File(rootDir.getAbsolutePath() + "\\" + jsonDir.getName().split("\\.")[0] + ".jpg");
         ImageIO.write(buffSBI,"jpg", solImdDir);
         /*
         g2D.setColor(clr1);
@@ -224,7 +224,7 @@ public class CreateImgSol{
         ImageIO.write(buffSBI,"gif", solution);*/
     }
 
-    public static void main(String[] args)  throws IOException,ParseException {
-        create(new File(System.getProperty("user.dir")+"\\solution.json"));
-    }
+    /*public static void main(String[] args)  throws IOException,ParseException {
+        create(new File(System.getProperty("user.dir")+"\\solution_d4s2.json"));
+    }*/
 }
