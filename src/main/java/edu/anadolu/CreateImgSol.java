@@ -208,23 +208,8 @@ public class CreateImgSol{
         g2D.dispose();
         File solImdDir = new File(rootDir.getAbsolutePath() + "\\" + jsonDir.getName().split("\\.")[0] + ".jpg");
         ImageIO.write(buffSBI,"jpg", solImdDir);
-        /*
-        g2D.setColor(clr1);
-        g2D.drawLine(cityPoints[0].x,cityPoints[0].y,cityPoints[1].x,cityPoints[1].y);
-        //g2D.drawLine(0,0,1415,768);
-        g2D.setColor(clr2);
-        int r = 30;
-        //g2D.fillOval(700,500,30,30);
-        for(Point p : cityPoints){
-            g2D.fillOval(p.x-(r/2),p.y-(r/2),r,r);
-        }
-
-
-        g2D.dispose();
-        ImageIO.write(buffSBI,"gif", solution);*/
     }
-
     /*public static void main(String[] args)  throws IOException,ParseException {
-        create(new File(System.getProperty("user.dir")+"\\solution_d4s2.json"));
+        create(new File(System.getProperty("user.dir")+"\\solution2.json"));
     }*/
 }

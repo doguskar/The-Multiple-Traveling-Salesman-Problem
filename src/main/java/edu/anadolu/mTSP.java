@@ -6,15 +6,17 @@ import org.json.simple.parser.ParseException;
 import java.io.*;
 import java.util.*;
 
-public class mTSP{
+public class mTSP implements Cloneable{
     private int numDepots;
     private int numSalesmen;
     private List<Integer> reminderCities;
-    private List<Integer> selectedCities;
     private List<Integer> selectedDepots;
     private List<List<List<Integer>>> routes;
+
+
     private final int MIN_ROUTE = 1;
     private final Random r = new Random();
+    private int curCost;
 
 
     public mTSP(int numDepots, int numSalesmen){
@@ -22,19 +24,35 @@ public class mTSP{
             throw new IllegalArgumentException("Number of salesmen or number of depots cannot be smaller than 1!");
         this.numDepots = numDepots;
         this.numSalesmen = numSalesmen;
-        selectedCities = new ArrayList<>();
         selectedDepots = new ArrayList<>();
         routes = new ArrayList<>();
         reminderCities = new ArrayList<>();
         for(int i=0; i<81; i++)
             reminderCities.add(i);
     }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        mTSP clone = new mTSP(numDepots,numSalesmen);
+        clone.setRoutes(this.getCloneRoutes());
+        clone.setSelectedDepots(new ArrayList<>(this.getSelectedDepots()));
+        clone.setReminderCities(new ArrayList<>(this.getReminderCities()));
+        return clone;
+    }
+
     public void randomSolution(){
+        if(reminderCities.size() == 0){
+            selectedDepots = new ArrayList<>();
+            routes = new ArrayList<>();
+            reminderCities = new ArrayList<>();
+            for(int i=0; i<81; i++)
+                reminderCities.add(i);
+        }
+
         //Selecting Depots
         for(int i = 0; i < numDepots; i++){
             int rCity = getCityNotSelected();
             selectedDepots.add(rCity);
-            selectedCities.add(rCity);
         }
         //Selecting Depots END
 
@@ -53,27 +71,19 @@ public class mTSP{
                 for(int i = 0; i < MIN_ROUTE; i++){
                     int rCity = getCityNotSelected();
                     list2.add(rCity);
-                    selectedCities.add(rCity);
                 }
             }
         }
         //Assigning Min Routes END
 
         //Assignment of remaining cities
-        while (selectedCities.size() != TurkishNetwork.cities.length){
+        while (reminderCities.size() != 0){
             int rDepot = r.nextInt(numDepots);
             int rSalesman = r.nextInt(numSalesmen);
             int rCity = getCityNotSelected();
             routes.get(rDepot).get(rSalesman).add(rCity);
-            selectedCities.add(rCity);
         }
         //Assignment of remaining cities END
-
-        //Use Move Operations
-        useMoveOpe();
-    }
-    public void validate(){
-
     }
     public int cost(){
         int cost = 0;
@@ -89,6 +99,7 @@ public class mTSP{
                 cost += TurkishNetwork.distance[currentCity][depotCity];
             }
         }
+        curCost = cost;
         return cost;
     }
     public void print(boolean getVerbose){
@@ -162,12 +173,14 @@ public class mTSP{
         Writer output = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(jsonDir), "UTF8"));
         output.write(solution.toJSONString());
         output.close();
-        try{
+
+        //CONVERT TO IMG
+        /*try{
             writeImgSol(jsonDir);
         }
         catch (ParseException e){
             e.printStackTrace();
-        }
+        }*/
     }
     private void writeImgSol(File jsonDir) throws ParseException, IOException{
         CreateImgSol.create(jsonDir);
@@ -183,103 +196,24 @@ public class mTSP{
 
 
     /*Part II*/
-
-    public void useMoveOpe(){
-        int op0 = 0, op1 = 0, op2 = 0, op3 = 0, op4 = 0;
-        for (int i = 0; i < 5_000_000; i++) {
-
-            int rOpe = r.nextInt(5);
-            //rOpe = 4;
-            if(rOpe == 0){
-                List<List<List<Integer>>> tmpRoutes = getCloneRoutes();
-                int tmpCost = cost();
-
-                swapNodesInRoute();
-
-                int newCost = cost();
-                if(newCost > tmpCost)
-                    routes = tmpRoutes;
-                else
-                    op0++;
-            }
-            else if(rOpe == 1){
-                List<Integer> tmpSelectedDepots = new ArrayList<>(selectedDepots);
-                List<List<List<Integer>>> tmpRoutes = getCloneRoutes();
-                int tmpCost = cost();
-
-                swapHubWithNodeInRoute();
-
-                int newCost = cost();
-                if(newCost > tmpCost){
-                    selectedDepots = tmpSelectedDepots;
-                    routes = tmpRoutes;
-                }
-                else
-                    op1++;
-            }
-            else if(rOpe == 2){
-                List<List<List<Integer>>> tmpRoutes = getCloneRoutes();
-                int tmpCost = cost();
-
-                swapNodesBetweenRoutes();
-
-                int newCost = cost();
-                if(newCost > tmpCost)
-                    routes = tmpRoutes;
-                else
-                    op2++;
-            }
-            else if(rOpe == 3){
-                List<List<List<Integer>>> tmpRoutes = getCloneRoutes();
-                int tmpCost = cost();
-
-                insertNodeInRoute();
-
-                int newCost = cost();
-                if(newCost > tmpCost)
-                    routes = tmpRoutes;
-                else
-                    op3++;
-            }
-            else if(rOpe == 4){
-                List<Integer> tmpSelectedDepots = new ArrayList<>(selectedDepots);
-                List<List<List<Integer>>> tmpRoutes = getCloneRoutes();
-                int tmpCost = cost();
-
-                insertNodeBetweenRoutes();
-
-                int newCost = cost();
-                if(newCost > tmpCost){
-                    selectedDepots = tmpSelectedDepots;
-                    routes = tmpRoutes;
-                }
-                else
-                    op4++;
-            }
-        }
-
-        JSONObject opJson = new JSONObject();
-        opJson.put("swapNodesInRoute",op0);
-        opJson.put("swapHubWithNodeInRoute",op1);
-        opJson.put("swapNodesBetweenRoutes",op2);
-        opJson.put("insertNodeInRoute",op3);
-        opJson.put("insertNodeBetweenRoutes",op4);
-        try {
-            writeMoveOpeJSON(opJson);
-        }catch (IOException e){
-            e.printStackTrace();
-        }
+    public void setRoutes(List<List<List<Integer>>> routes) {
+        this.routes = routes;
     }
-    private void writeMoveOpeJSON(JSONObject json) throws IOException{
-        File jsonDir = new File(System.getProperty("user.dir")
-                + "\\solution_d" + numDepots + "s" + numSalesmen + "_moveOpeNums.json");
-
-        Writer output = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(jsonDir), "UTF8"));
-        output.write(json.toJSONString());
-        output.close();
+    public List<Integer> getSelectedDepots() {
+        return selectedDepots;
+    }
+    public void setSelectedDepots(List<Integer> selectedDepots) {
+        this.selectedDepots = selectedDepots;
+    }
+    public List<Integer> getReminderCities() {
+        return reminderCities;
+    }
+    public void setReminderCities(List<Integer> reminderCities) {
+        this.reminderCities = reminderCities;
     }
 
-    private void swapNodesInRoute(){
+    //Move operations
+    public void swapNodesInRoute(){
         List<List<Integer>> rDepot = routes.get(r.nextInt(routes.size()));
         List<Integer>  seletedRoute = rDepot.get(r.nextInt(rDepot.size()));
         if(seletedRoute.size() == 1)
@@ -300,7 +234,7 @@ public class mTSP{
         return nums;
     }
 
-    private void swapHubWithNodeInRoute(){
+    public void swapHubWithNodeInRoute(){
         int rDepotIn = r.nextInt(routes.size());
         List<List<Integer>> rDepot = routes.get(rDepotIn);
         List<Integer>  seletedRoute = rDepot.get(r.nextInt(rDepot.size()));
@@ -312,7 +246,7 @@ public class mTSP{
         selectedDepots.set(rDepotIn,rHub);
     }
 
-    private void swapNodesBetweenRoutes(){
+    public void swapNodesBetweenRoutes(){
         List<List<Integer>> rDepot1 = routes.get(r.nextInt(routes.size()));
         List<Integer>  seletedRoute1 = rDepot1.get(r.nextInt(rDepot1.size()));
         List<List<Integer>> rDepot2;
@@ -330,7 +264,7 @@ public class mTSP{
         seletedRoute2.set(rHubF2In,rHubF1);
     }
 
-    private void insertNodeInRoute(){
+    public void insertNodeInRoute(){
         List<List<Integer>> rDepot = routes.get(r.nextInt(routes.size()));
         List<Integer>  seletedRoute = rDepot.get(r.nextInt(rDepot.size()));
         if(seletedRoute.size() < 2)
@@ -342,7 +276,7 @@ public class mTSP{
         seletedRoute.add(rHub);
     }
 
-    private void insertNodeBetweenRoutes(){
+    public void insertNodeBetweenRoutes(){
         List<List<Integer>> rDepot1 = routes.get(r.nextInt(routes.size()));
         List<Integer>  seletedRoute1 = rDepot1.get(r.nextInt(rDepot1.size()));
         if(seletedRoute1.size() < 2)
@@ -368,7 +302,16 @@ public class mTSP{
 
     }
 
-    private List<List<List<Integer>>> getCloneRoutes(){
+    public void writeMoveOpeJSON(JSONObject json) throws IOException{
+        File jsonDir = new File(System.getProperty("user.dir")
+                + "\\solution_d" + numDepots + "s" + numSalesmen + "_moveOpeNums.json");
+
+        Writer output = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(jsonDir), "UTF8"));
+        output.write(json.toJSONString());
+        output.close();
+    }
+
+    public List<List<List<Integer>>> getCloneRoutes(){
         List<List<List<Integer>>> clone = new ArrayList<>();
 
         for(List<List<Integer>> depot : routes){
@@ -378,7 +321,6 @@ public class mTSP{
             }
             clone.add(cloneDepot);
         }
-
         return clone;
     }
 }
